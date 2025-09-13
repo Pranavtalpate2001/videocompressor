@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Compressor</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f3f3f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(108, 99, 255, 0.15);
+      width: 500px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #5a54d6;
+    }
+    .upload-box {
+      border: 2px dashed #aaa;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: border-color 0.3s ease, background 0.3s ease;
+      color: #555;
+    }
+    .upload-box:hover {
+      border-color: #6c63ff;
+      background: #f9f9ff;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .btn {
+      background: #6c63ff;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      margin-top: 15px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    .btn:hover {
+      background: #5146d9;
+    }
+    .progress-container {
+      margin: 25px 0;
+      display: none;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+      border-radius: 10px;
+    }
+    #progressText {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #5a54d6;
+    }
+    .result {
+      margin-top: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fd;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .result div {
+      font-size: 16px;
+      font-weight: bold;
+      color: #444;
+    }
+    .reduction {
+      color: #00c853;
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Video Compressor</h1>
+
+    <label class="upload-box">
+      <input type="file" id="videoFile">
+      <span>📂 Click or Drag & Drop Video</span>
+    </label>
+
+    <button class="btn" onclick="uploadVideo()">Compress Video</button>
+
+    <div class="progress-container" id="progressBox">
+      <progress id="progressBar" value="0" max="100"></progress>
+      <p id="progressText">0%</p>
+    </div>
+
+    <div class="result" id="resultBox" style="display:none;">
+      <div>
+        <p>Original: <span id="originalSize">0</span> MB</p>
+        <p>Compressed: <span id="compressedSize">0</span> MB</p>
+      </div>
+      <div class="reduction" id="reductionPercent">-0%</div>
+    </div>
+  </div>
+
+  <script>
+    function uploadVideo() {
+      const fileInput = document.getElementById("videoFile");
+      if (!fileInput.files.length) {
+        alert("Please select a video!");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "http://localhost:8080/compress", true);
+
+      // Progress bar update
+      xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+          let percent = Math.round((event.loaded / event.total) * 100);
+          document.getElementById("progressBox").style.display = "block";
+          document.getElementById("progressBar").value = percent;
+          document.getElementById("progressText").innerText = percent + "%";
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          const blob = new Blob([xhr.response], { type: "video/mp4" });
+          const url = window.URL.createObjectURL(blob);
+
+          // Size calculation
+          let originalSize = (file.size / (1024*1024)).toFixed(1);
+          let compressedSize = (blob.size / (1024*1024)).toFixed(1);
+          let reduction = (((originalSize - compressedSize) / originalSize) * 100).toFixed(0);
+
+          document.getElementById("resultBox").style.display = "flex";
+          document.getElementById("originalSize").innerText = originalSize;
+          document.getElementById("compressedSize").innerText = compressedSize;
+          document.getElementById("reductionPercent").innerText = "-" + reduction + "%";
+
+          // Auto download compressed video
+          let a = document.createElement("a");
+          a.href = url;
+          a.download = "compressed.mp4";
+          a.click();
+        } else {
+          alert("Compression failed!");
+        }
+      };
+
+      xhr.responseType = "arraybuffer";
+      xhr.send(formData);
+    }
+  </script>
+</body>
+</html>
