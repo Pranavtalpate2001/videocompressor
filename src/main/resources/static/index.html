@@ -132,7 +132,7 @@
       formData.append("file", file);
 
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", "http://localhost:8080/compress", true);
+      xhr.open("POST", "https://videocompressor-mzeb.onrender.com/compress", true);
 
       // Progress bar update
       xhr.upload.onprogress = function(event) {
